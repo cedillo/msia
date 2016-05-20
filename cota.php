@@ -1,4 +1,12 @@
 <?php
+
+	try{
+		$db = new PDO("sqlsrv:Server={$hostname}; Database={$database}", $username, $password );
+	}catch (PDOException $e) {
+		print "ERROR: " . $e->getMessage() . "<br><br>HOSTNAME: " . $hostname . " BD:" . $database . " USR: " . $username . " PASS: " . $password . "<br><br>";
+		die();
+	}
+	
 	$app->get('/cargarArchivo/Universo/:nombre/:cuenta', function($nombre, $cuenta)    use($app, $db) {	
 		try{
 			$usrActual = $_SESSION["idUsuario"];

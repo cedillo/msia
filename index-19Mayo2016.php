@@ -2,22 +2,17 @@
 	session_start();
 	require 'src/conexion.php';
 	require 'Slim/Slim.php';
-	
 	include 'Excel/simplexlsx.class.php';
 
 
 	\Slim\Slim::registerAutoloader();
 	$app = new \Slim\Slim();
-
-	require 'hector.php';
-	require 'arian.php';
-	require 'cota.php';
+	
+	$db="";
 	
 
 	define("MAIN_ACCESS", true);
-
 	$app->config(array('debug'=>true, 'templates.path'=>'./',));
-
 	try{
 		$db = new PDO("sqlsrv:Server={$hostname}; Database={$database}", $username, $password );
 	}catch (PDOException $e) {
@@ -25,6 +20,11 @@
 		die();
 	}
 	if(!isset($_SESSION["logueado"])) $_SESSION["logueado"]=0;
+	
+	require 'hector.php';
+	require 'arian.php';
+	require 'cota.php';		
+	
 
 	//ACCESO AL SISTEMA
 
@@ -192,25 +192,7 @@
 
 
 
-	// Inicio nuevo Código HVS 20160511 06:30
-	//CODIGO PHP
 
-	$app->get('/catInhabiles', function()  use ($app, $db) {
-		//$cuenta = $_SESSION["idCuentaActual"];
-
-		$sql="SELECT dh.idCuenta idCta, dh.idDia idDia, dh.tipo tipo, dh.nombre nombre, CONVERT(VARCHAR(12),dh.fInicio,102) fInicio, CONVERT(VARCHAR(12),dh.fFin,102) fFin, dh.estatus estatus FROM sia_diasinhabiles dh ORDER BY  dh.idCuenta, dh.idDia DESC";
-		$dbQuery = $db->prepare($sql);
-//		$dbQuery->execute(array(':cuenta' => $cuenta));
-		$dbQuery->execute();
-		$result['datos'] = $dbQuery->fetchAll(PDO::FETCH_ASSOC);
-		if(!$result){
-			$app->halt(404, "NO SE ENCONTRARON DATOS.");
-		}else{
-			$app->render('catInhabiles.php', $result);
-		}
-	})->name('listaInhabiles');
-
-	// Fin nuevo Código HVS 20160511 06:30
 
 
 
@@ -496,26 +478,6 @@
 		}
 	});
 
-	/* **********************************************************************************
-		INICIA CODIGO HVS 2016/05/17
-	 ***********************************************************************************
-	*/
-		$app->get('/lstInhabilByID/:id', function($id)    use($app, $db) {
-			$sql="SELECT idCuenta idDia, tipo, nombre, fInicio, fFin, usrAlta, fAlta, estatus " .
-			"FROM sia_diasinhabiles WHERE idDia=:id ";
-			$dbQuery = $db->prepare($sql);
-			$dbQuery->execute(array(':id' => $id));
-			$result = $dbQuery->fetch(PDO::FETCH_ASSOC);
-			if(!$result){
-				$app->halt(404, "NO SE ENCONTRARON DATOS ");
-			}else{
-				echo json_encode($result);
-			}
-		});
-	/* **********************************************************************************
-		FINALIZA CODIGO HVS 2016/05/17
-	 ***********************************************************************************
-	*/
 
 	//Guarda un avanceActividad
 $app->post('/guardar/avance', function()  use($app, $db) {
@@ -749,75 +711,7 @@ $app->post('/guardar/avance', function()  use($app, $db) {
 	});
 
 
-	// Inicio nuevo Código HVS 20160512 09:30
-		//CODIGO PHP
-		//Guarda un día inhábil
-	$app->post('/guardar/inhabiles', function()  use($app, $db) {
-		$usrActual = $_SESSION["idUsuario"];
-		$cuenta = $_SESSION["idCuentaActual"];
-
-		$request=$app->request;
-
-		//$cuenta = $request->post('txtCuenta');
-		$dia = $request->post('txtDia');
-		$tipo = $request->post('txtTipo');
-		$nombre = strtoupper($request->post('txtNombre'));
-
-		//$fInicio = $request->post('txtFechaInicial');
-		$fInicio = date_create(($request->post('txtFechaInicial')));
-		$fInicio = $fInicio->format('Y-m-d');
-
-		//$fFin = $request->post('txtFechaFinal');
-		$fFin = date_create(($request->post('txtFechaFinal')));
-		$fFin = $fFin->format('Y-m-d');
-
-		$estatus = $request->post('txtEstatus');
-
-		$oper = $request->post('txtOperacion');
-
-		//echo nl2br("\nEl valor de Oper es: ".$oper);
-		//echo nl2br("\nValor usrActual ".$usrActual);
-		//echo nl2br("\nValor cuenta ".$cuenta);
-		//echo nl2br("\nValor dia ".$dia);
-		//echo nl2br("\nValor tipo ".$tipo);
-		//echo nl2br("\nValor nombre ".$nombre);
-		//echo nl2br("\nValor fInicio ".$fInicio);
-		//echo nl2br("\nValor fFin ".$fFin);
-		//echo nl2br("\nValor estatus ".$estatus);
-
-		try
-		{
-			if($oper=='INS')
-			{
-				$sql="INSERT INTO sia_diasinhabiles (idCuenta, tipo, nombre, fInicio, fFin, usrAlta, fAlta, estatus) " .
-				"VALUES(:cuenta, :tipo, :nombre, :fInicio, :fFin, :usrActual, getdate(), 'ACTIVO');";
-				$dbQuery = $db->prepare($sql);
-
-				$dbQuery->execute(array(':cuenta' => $cuenta, ':tipo' => $tipo, ':nombre' => $nombre, ':fInicio' => $fInicio, ':fFin' => $fFin, ':usrActual' => $usrActual ));
-				//echo "<br>INS OK<hr>";
-
-			}else{
-
-				$sql="UPDATE sia_diasinhabiles SET " .
-				"idCuenta=:cuenta, tipo=:tipo, nombre=:nombre, fInicio=:fInicio, fFin=:fFin, usrModificacion=:usrActual, " .
-				" fModificacion=getdate(), estatus=:estatus WHERE idDia =:dia";
-				$dbQuery = $db->prepare($sql);
-
-				$dbQuery->execute(array(':cuenta' => $cuenta, ':tipo' => $tipo, ':nombre' => $nombre, ':fInicio' => $fInicio, ':fFin' => $fFin, ':usrActual' => $usrActual, ':estatus' => $estatus, ':dia' => $dia));
-				//echo "<br>UPD OK";
-
-			}
-
-			echo nl2br("\nQuery Ejecutado : ".$sql);
-
-		}catch (Exception $e) {
-			print "¡Error!: " . $e->getMessage() . "<br/>";
-			die();
-		}
-		$app->redirect($app->urlFor('listaInhabiles'));
-	});
-
-	// Fin Nuevo Código HVS 20160512 09:30
+	
 
 
 
@@ -1170,82 +1064,7 @@ $app->post('/guardar/avance', function()  use($app, $db) {
 		}
 	});
 
-	//lista de auditoria
-		$app->get('/y/:id', function($id)    use($app, $db) {
-		$sql="SELECT CONCAT(em.nombre,' ',em.paterno,' ',em.materno) nombre, p.nombre puesto " .
-		"FROM sia_empleados em LEFT JOIN sia_plazas p on em.idPlaza = p.idPlaza LEFT JOIN sia_auditoriasauditores aua on aua.idAuditor = em.idEmpleado WHERE aua.idAuditoria=:id ";
 
-		$dbQuery = $db->prepare($sql);
-		$dbQuery->execute(array(':id' => $id));
-		$result = $dbQuery->fetchAll(PDO::FETCH_ASSOC);
-		if(!$result){
-			$app->halt(404, "NO SE ENCONTRARON DATOS ");
-		}else{
-			echo json_encode($result);
-		}
-	});
-
-
-                //Guarda un nuevo criterio para la auditoria
-
-                $app->post('/guardar/auditoriaCriteriosxx/:oper/:cadena', function($oper, $cadena)  use($app, $db) {
-
-                               $datos= $cadena;
-                               $usrActual = $_SESSION["idUsuario"];
-                               $cuenta = $_SESSION["idCuentaActual"];
-                
-                               try{
-                                               if($datos<>""){
-                                                               $dato = explode("|", $datos);
-
-                                                               $programa=$dato[0];
-                                                               $auditoria=$dato[1];
-                                                               $criterio=$dato[2];
-                                                               $justificacion=strtoupper($dato[3]);
-                                                               $elementos=strtoupper($dato[4]);
-
-                                                               echo nl2br("\nusrActual : ".$programa);
-                                                               echo nl2br("\ncuenta : ".$cuenta);
-                                                               echo nl2br("\nPrograma : ".$programa);
-                                                               echo nl2br("\nauditoria : ".$auditoria);
-                                                               echo nl2br("\ncriterio : ".$criterio);
-                                                               echo nl2br("\njustificacion : ".$justificacion);
-                                                               echo nl2br("\nelementos : ".$elementos);
-
-                                                               if($oper=='INS')
-                                                               {
-                                                                              $sql="INSERT INTO sia_auditoriascriterios ". 
-                                                                              "(idCuenta, idPrograma, idAuditoria, idCriterio, justificacion, elementos, usrAlta, fAlta, estatus) " .
-                                                                              "VALUES(:cuenta, :programa, :auditoria, :criterio, :justificacion, :elementos, :usrActual, getdate(), 'ACTIVO');";
-                                                                              $dbQuery = $db->prepare($sql);
-
-                                                                              $dbQuery->execute(array(':cuenta' => $cuenta, ':programa:' => $programa, ':auditoria' => $auditoria, ':criterio' => $criterio, ':Justificacion' => $justificacion, ':elementos' => $elementos, ':usrActual' => $usrActual ));
-                                                               }else{
-
-                                                                              $sql="UPDATE sia_auditoriascriterios SET " . 
-                                                                              "idCriterio=:criterio, justificacion=:justificacion, elementos=:elementos, " . 
-                                                                              "usrModificacion=:usrActual, fModificacion=getdate() " . 
-                                                                              "WHERE idCuenta=:cuenta and idPrograma=:programa and idAuditoria=:auditoria ";
-                                                                              $dbQuery = $db->prepare($sql);
-
-                                                                              $dbQuery->execute(array(':criterio' => $criterio, ':justificacion' => $justificacion, ':elementos' => $elementos, ':usrActual' => $usrActual, ':cuenta' => $cuenta, ':programa:' => $programa, ':auditoria' => $auditoria ));
-                                                               }
-
-                                                               echo nl2br("\nQuery Ejecutado : ".$sql);
-                                               }
-                                               else{
-                                                               echo "NO";
-                                               }
-                               }catch (Exception $e) {
-                                               print "¡Error!: " . $e->getMessage() . "<br/>";
-                                               die();
-                               }
-                               
-                               //$app->redirect($app->urlFor('listaAuditoriaCriterios'));
-                });
-
-	
-	
 
 
 
