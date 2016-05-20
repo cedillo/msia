@@ -10,9 +10,16 @@
 	
 	$db="";
 	
+	require 'hector.php';
+	//require 'arian.php';
+	require 'cota.php';	
+	
+	
 
 	define("MAIN_ACCESS", true);
+
 	$app->config(array('debug'=>true, 'templates.path'=>'./',));
+
 	try{
 		$db = new PDO("sqlsrv:Server={$hostname}; Database={$database}", $username, $password );
 	}catch (PDOException $e) {
@@ -21,9 +28,7 @@
 	}
 	if(!isset($_SESSION["logueado"])) $_SESSION["logueado"]=0;
 	
-	require 'hector.php';
-	require 'arian.php';
-	require 'cota.php';		
+	
 	
 
 	//ACCESO AL SISTEMA
